@@ -1,3 +1,4 @@
+#!/usr/bin/make
 
 # # Makefile
 
@@ -17,11 +18,13 @@ MYSQL_READLINK         = $(shell readlink $(MYSQL_WHICH))
 MYSQL_DIRNAME          = $(shell dirname $(MYSQL_WHICH))
 MYSQL_READLINK_DIRNAME = $(shell dirname $(MYSQL_READLINK))
 
-MYSQL_ROOT   = $(shell dirname $(MYSQL_DIRNAME)/$(MYSQL_READLINK_DIRNAME))
-MYSQL_FOLDER = ./mysql
-MYSQL_OPTS   = --datadir=$(MYSQL_FOLDER) \
-               --basedir=$(MYSQL_ROOT) \
-               --user=$(whoami) \
+MYSQL_DB      = 'root'
+MYSQL_ROOT    = $(shell dirname $(MYSQL_DIRNAME)/$(MYSQL_READLINK_DIRNAME))
+MYSQL_FOLDER  = $(abspath ./mysql)
+MYSQL_LOGFILE = $(MYSQL_FOLDER)/queries.log
+MYSQL_OPTS    = --datadir=$(MYSQL_FOLDER) \
+                --basedir=$(MYSQL_ROOT) \
+                --user=$(whoami) \
 
 GROC_OPTS  = --whitespace-after-token true --github -i Makefile -o ./doc
 GROC_FILES = Makefile
@@ -92,6 +95,15 @@ pg-stop:
 # configured to run a MySQL server instance from.
 mysql-init:
 	mysql_install_db $(MYSQL_OPTS)
+
+# ### make mysql-logs
+
+# Sends commands to MySQL to start logging queries to a file.
+mysql-logs:
+	cat scripts/mysql-logs.sql | \
+		m4 -DMYSQL_DB=$(MYSQL_DB) -DMYSQL_LOGFILE=$(MYSQL_LOGFILE) | \
+		mysql -u root
+	tail -f $(MYSQL_LOGFILE)
 
 # ### make mysql-run
 
