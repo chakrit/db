@@ -29,6 +29,9 @@ MYSQL_OPTS    = --datadir=$(MYSQL_FOLDER) \
 GROC_OPTS  = --whitespace-after-token true --github -i Makefile -o ./doc
 GROC_FILES = Makefile
 
+ES17_FOLDER    = ./es17
+ES17_OPTS      = -Des.path.logs=$(ES17_FOLDER)/logs -Des.path.data=$(ES17_FOLDER)/data
+
 
 default: doc
 	@echo open doc/Makefile.html to view \
@@ -176,5 +179,25 @@ mc-stop:
 	curl -v -X DELETE http://0.0.0.0:1080
 
 
-.PHONY: default doc pg pg-* mysql mysql-* redis redis-* mc mc-*
+# # ELASTIC SEARCH
 
+# ### make es17
+
+# Starts Elastic Search 1.7 daemonized.
+es17:
+	elasticsearch $(ES17_OPTS) -d
+
+# ### make es-run
+
+# Starts Elastic Search in the foreground.
+es17-run:
+	elasticsearch $(ES17_OPTS)
+
+# ### make es-stop
+
+# Stops Elastic Search
+es17-stop:
+	curl -XPOST $(ES17_CURL_OPTS) 'http://0.0.0.0:9200/_cluster/nodes/_local/_shutdown'
+
+
+.PHONY: default doc pg pg-* mysql mysql-* redis redis-* mc mc-* es17 es17-*
