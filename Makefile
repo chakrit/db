@@ -29,6 +29,10 @@ MYSQL_OPTS    = --datadir=$(MYSQL_FOLDER) \
 GROC_OPTS  = --whitespace-after-token true --github -i Makefile -o ./doc
 GROC_FILES = Makefile
 
+ES_FOLDER  = ./es
+ES_PIDFILE = $(ES_FOLDER)/pid
+ES_OPTS    = -p $(ES_PIDFILE) --path.data=$(ES_FOLDER)/data --path.logs=$(ES_FOLDER)/logs
+
 ES17_FOLDER    = ./es17
 ES17_OPTS      = -Des.path.logs=$(ES17_FOLDER)/logs -Des.path.data=$(ES17_FOLDER)/data
 
@@ -179,7 +183,7 @@ mc-stop:
 	curl -v -X DELETE http://0.0.0.0:1080
 
 
-# # ELASTIC SEARCH
+# # ELASTIC SEARCH 1.7
 
 # ### make es17
 
@@ -200,4 +204,24 @@ es17-stop:
 	curl -XPOST $(ES17_CURL_OPTS) 'http://0.0.0.0:9200/_cluster/nodes/_local/_shutdown'
 
 
-.PHONY: default doc pg pg-* mysql mysql-* redis redis-* mc mc-* es17 es17-*
+# # ELASTIC SEARCH 5.2
+
+# ### make es
+
+# Starts Elastic Search daemonized.
+es:
+	elasticsearch $(ES_OPTS) -d -p $(ES_PIDFILE)
+
+# ### make es-run
+
+# Starts Elastic Search in the foreground.
+es-run:
+	elasticsearch $(ES_OPTS) -p $(ES_PIDFILE)
+
+# ### make es-stop
+
+# Stops Elastic Search
+es-stop:
+	kill -s SIGTERM $(shell cat $(ES_PIDFILE))
+
+.PHONY: default doc pg pg-* mysql mysql-* redis redis-* mc mc-* es17 es17-* es es-*
