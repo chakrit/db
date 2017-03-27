@@ -31,7 +31,7 @@ GROC_FILES = Makefile
 
 ES_FOLDER  = ./es
 ES_PIDFILE = $(ES_FOLDER)/pid
-ES_OPTS    = -p $(ES_PIDFILE) --path.data=$(ES_FOLDER)/data --path.logs=$(ES_FOLDER)/logs
+ES_OPTS    = -p $(ES_PIDFILE) -E path.data=$(ES_FOLDER)/data -E path.logs=$(ES_FOLDER)/logs
 
 ES17_FOLDER    = ./es17
 ES17_OPTS      = -Des.path.logs=$(ES17_FOLDER)/logs -Des.path.data=$(ES17_FOLDER)/data
