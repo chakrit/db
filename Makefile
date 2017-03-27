@@ -210,13 +210,13 @@ es17-stop:
 
 # Starts Elastic Search daemonized.
 es:
-	elasticsearch $(ES_OPTS) -d -p $(ES_PIDFILE)
+	elasticsearch $(ES_OPTS) -d
 
 # ### make es-run
 
 # Starts Elastic Search in the foreground.
 es-run:
-	elasticsearch $(ES_OPTS) -p $(ES_PIDFILE)
+	elasticsearch $(ES_OPTS)
 
 # ### make es-stop
 
