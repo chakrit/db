@@ -183,27 +183,6 @@ mc-stop:
 	curl -v -X DELETE http://0.0.0.0:1080
 
 
-# # ELASTIC SEARCH 1.7
-
-# ### make es17
-
-# Starts Elastic Search 1.7 daemonized.
-es17:
-	elasticsearch $(ES17_OPTS) -d
-
-# ### make es-run
-
-# Starts Elastic Search in the foreground.
-es17-run:
-	elasticsearch $(ES17_OPTS)
-
-# ### make es-stop
-
-# Stops Elastic Search
-es17-stop:
-	curl -XPOST $(ES17_CURL_OPTS) 'http://0.0.0.0:9200/_cluster/nodes/_local/_shutdown'
-
-
 # # ELASTIC SEARCH 5.2
 
 # ### make es
