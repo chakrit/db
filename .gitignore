@@ -1,6 +1,4 @@
-doc/
-pg/
 mysql/
+pg/
 redis/
-es17/
-es/
+ts/
