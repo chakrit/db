@@ -1,0 +1,3 @@
+school = "prod9/school"
+backend = "codex"
+skills = ["ace", "ace-init", "ace-save", "ace-docs", "architect", "code", "safety-audit"]
