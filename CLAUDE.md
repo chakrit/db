@@ -6,19 +6,24 @@ build or automated test suite.
 
 ## Layout and commands
 
-- make/pg.mk: pg-init, pg-run, pg, pg-stop; data and logs under data/pg/.
-- make/mysql.mk: mysql-init, mysql-run, mysql, mysql-stop, mysql-logs; data under data/mysql/.
-- make/redis.mk: redis-run, redis, redis-stop; tracked config config/redis.conf.
-- make/mailcatcher.mk: mc-run, mc, mailcatcher, mc-stop.
-- make/typesense.mk: ts and typesense run in the foreground; data under data/typesense/.
-- scripts/mysql-logs.sql: the SQL used by mysql-logs to enable general-query logging.
+- make/pg.mk, mariadb.mk, redis.mk, mailcatcher.mk, typesense.mk, garage.mk and
+  rabbitmq.mk: each service's settings and init/run/start/stop/status targets.
+- scripts/<service>.sh: native initialization, foreground/background and control.
+- scripts/service.sh: shared validation, readiness and explicit process control.
+- .env: shared defaults; ignored .env.local: personal overrides.
+- data/<service>/: all persisted and generated service state; config/: tracked templates.
 
 Run make targets only when the user authorizes the service operation. Leave server
 startup to the user. Do not run destructive cleanup commands from README.md.
-There is no redis-init target despite the README example. MySQL and Redis stop targets
-use default connection settings; check the intended instance before using them.
+There is only one instance of each service on the entire machine, always started through
+this repository. No checkout-specific instance isolation is required. Background startup
+is explicit; no system service is registered. MariaDB replaces MySQL; Garage supplies S3.
 
 ## Conventions and verification
+
+This project is exempt from test requirements. Do not write or retain test code, add
+automated check/test targets (including `make check`), or run test/check workflows.
+Leave service startup to the user.
 
 Keep service recipes in their existing make/*.mk owner and use tabs for recipes.
 Use the gh remote and current branch by default. Preserve tight resource budgets and

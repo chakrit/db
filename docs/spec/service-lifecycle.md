@@ -3,8 +3,8 @@
 Status: accepted
 
 This is the intended behavior for modernization of this repository's local service
-commands. [services.md](services.md) describes the existing implementation; that code
-does not yet satisfy this contract consistently.
+commands. [services.md](services.md) describes the implementation and its unverified
+native runtime checks.
 
 Every supported service must offer initialization, foreground execution, and background
 execution. Every supported service must have an initialization task.
@@ -17,10 +17,10 @@ Initialization must allow a fresh instance after the user removes the stopped se
 directory. Keep persistent service state under that repository-owned directory so the
 user does not need to hunt down hidden state elsewhere to reset the instance.
 
-The service data root is `data/`, with one directory per service: `pg/`, `mysql/`,
-`redis/`, `mailcatcher/`, `typesense/`, `minio/`, and `rabbitmq/`. The directory scaffold
-exists; existing recipes use it, and the existing PostgreSQL and Redis data was moved
-into it. Mailcatcher, MinIO and RabbitMQ state routing still needs implementation.
+The service data root is `data/`, with one directory per service: `pg/`, `mariadb/`,
+`redis/`, `mailcatcher/`, `typesense/`, `garage/`, and `rabbitmq/`. Use MariaDB in place
+of MySQL and Garage for S3-compatible object storage. Existing PostgreSQL and Redis
+data was moved into this root. Existing MySQL data remains untouched.
 Service initialization must recreate missing directories. Keep tracked configuration
 outside disposable data directories.
 
@@ -30,3 +30,6 @@ initialization task.
 
 Structure environment variables sensibly. Every service Makefile must use a consistent
 variable and task structure.
+
+This project is exempt from test requirements. Do not write or retain test code, add
+automated check/test targets, or run test/check workflows.

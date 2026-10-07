@@ -1,84 +1,99 @@
+# Local services
 
-# db/ folder
+Explicit commands for host-installed PostgreSQL, MariaDB, Redis, MailCatcher, Typesense,
+Garage and RabbitMQ. There is one instance of each service on the machine, always
+started through this repository. Nothing starts automatically or registers a system
+service.
 
-If you are like me and you hate running a lot of services, particularly
-databases in the background that silently consumes your machine resources
-without your consent, then you might find this project useful.
+## MariaDB now
 
-This project is a right now, just a simple Makefile with pre-configured
-command line calls so you can start and stop several common services at once
-with ease via `make` and can be sure that all data created by those services
-is contained inside the folder which means they can be cleaned by simply running
-`git-clean`.
-
-Right now it only runs a few services that I needed. I will add more
-in the future as I needs them or if someone sends me a pull request :)
-
-### INITIALIZE
-
-You needs to run this command once for each service that requires initializing
-and also if you have just ran `git-clean` for the service.
+With MariaDB installed and its executables on PATH:
 
 ```sh
-$ make pg-init mysql-init redis-init
+make mariadb-init
+make mariadb-run
 ```
 
-**NOTE:** To properly initializes and run PostgreSQL locally on OS X you may need to
-increase your system's `kern.sysv.shmall` value to at least 4096. Read
-[Increasing Shared Memory for Postgres on OS X](http://benscheirman.com/2011/04/increasing-shared-memory-for-postgres-on-os-x/)
-for more info.
-
-### START
-
-For example, to start PostgreSQL, Redis and Mailcatcher all at once, just run:
+The server stays in the foreground; Ctrl-C stops it. For an explicit background run:
 
 ```sh
-$ make pg mysql redis
+make mariadb-start
+make mariadb-status
+make mariadb-shell
+make mariadb-stop
 ```
 
-### STOP
+The default MariaDB connection is a local Unix socket with OS-user authentication.
+No TCP port or password setup is needed for that workflow. Initialization keeps all
+database files under `data/mariadb/` and never starts a persistent server. Existing
+`data/mysql/` is preserved; it is not a MariaDB migration.
 
-Stopping services is just as easy:
+The [MariaDB reference](docs/spec/mariadb.md) covers remote account bootstrap, query
+logging and exact paths.
 
-```sh
-$ make pg-stop mysql-stop redis-stop
-```
+## Shared tasks
 
-### CLEAN
+Run Make from the repository root. Bare `make` lists commands and starts nothing.
 
-To clean all data from services, just run `git clean -xdf` on any related folder.
+| Task                 | Behavior                                             |
+| -------------------- | ---------------------------------------------------- |
+| `<service>-init`     | Prepare directories and required initial state       |
+| `<service>-run`      | Run in the foreground; interrupt with Ctrl-C         |
+| `<service>-start`    | Start in the background and wait for readiness       |
+| `<service>-stop`     | Stop the service, keeping its data                   |
+| `<service>-status`   | Check whether the service is ready                   |
 
-For example, to completely wipe your PostgreSQL clean and start fresh, just do this:
+Service names are `pg`, `mariadb`, `redis`, `mailcatcher`, `typesense`, `garage`, and
+`rabbitmq`. The previous bare service starts, `mc`/`ts` aliases and `mysql-*` targets
+have been replaced by this vocabulary.
 
-```sh
-$ git clean -xdf data/pg/
-```
+## Configuration
 
-If you are not sure what files `git` will delete from your system, just run a
-what-if mode once and `git-clean` will print out files that it would delete:
+`.env` contains shared Make-compatible defaults. Service-specific defaults live in
+their `make/*.mk` owner, grouped as binaries, paths, listeners, then credentials.
+Use ignored `.env.local` for personal overrides. Precedence is Make command-line
+assignments, then `.env.local`, then inherited environment values, then defaults.
 
-```sh
-$ git clean -xdn data/pg/
-```
+These are Make files, not shell scripts: do not `source` them. Use `NAME = value` in
+`.env.local`; quotes become part of a Make value, `#` starts a comment, and a literal
+dollar sign must be written as `$$`. Paths containing spaces are supported; use absolute
+paths when overriding a directory.
 
-# LICENSE
+Network ports are deliberately unset until assigned by the control agent. Set each
+required `*_PORT` in `.env.local` after assignment; client-facing listeners must use
+8000–9000 and bind to `0.0.0.0`. Missing ports fail clearly instead of silently using
+an unassigned listener. MariaDB's empty port explicitly selects Unix-socket-only mode.
 
-WTFPL (http://www.wtfpl.net/txt/copying/)
+For a new PostgreSQL cluster, set `PG_PASSWORD`; Redis requires `REDIS_PASSWORD`,
+Typesense requires `TYPESENSE_API_KEY`, and RabbitMQ requires `RABBITMQ_PASSWORD`.
+Garage generates private local S3 credentials on initialization. No real credential is
+provided in tracked defaults.
 
-# SUPPORT / CONTRIBUTE
+## Data and upgrades
 
-Just ping me [@chakrit](http://twitter.com/chakrit) on Twitter or
-[open a new GitHub issue](https://github.com/chakrit/db/issues/new)
+Each service owns `data/<service>/`, including generated configuration, logs and
+operational files. Tracked templates remain under `config/`. MailCatcher's messages
+are in memory and disappear when it stops.
 
-PRs also accepted.
+To reset a service, stop it, remove its complete data directory yourself, then run
+its init and run/start tasks. There is no destructive cleanup target. Initialization
+does not migrate an existing database or silently recreate populated state.
 
-### TODO
+Install and upgrade host binaries yourself; these recipes neither install packages nor
+enable background package-manager services. PostgreSQL refuses a server/data major
+version mismatch. Other services still require their upstream upgrade procedures;
+changing an executable is not a data migration.
 
-* CouchDb
-* MongoDb
+## References
 
-Other non-database services:
+- [Service command reference](docs/spec/services.md)
+- [Configuration and current release baselines](docs/spec/modernization.md)
+- [Garage S3 quick reference](docs/spec/garage.md)
+- [Required lifecycle](docs/spec/service-lifecycle.md)
 
-* Mailcatcher
-* Stunnel
+This project has no test code or automated check/test targets. Native initialization
+and server startup are left to the user.
 
+## License
+
+WTFPL.

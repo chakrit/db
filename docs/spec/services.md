@@ -1,127 +1,141 @@
-# Existing service commands
+# Service commands
 
 Status: implemented
 
-This is the implemented command surface for developers maintaining the local service
-recipes. Commands are described from source; they have not been run for this review. All
-paths assume the repository root as the working directory.
+This reference is for developers operating the repository's native service recipes.
+Commands have been checked from source, shell syntax, ShellCheck and Make dry-runs;
+no real service was started for verification.
+
+Run Make from the repository root. Every service has `-init`, `-run`, `-start`,
+`-stop` and `-status` targets. Run remains in the foreground; start explicitly
+launches a background process and checks readiness. Stop preserves data.
+
+## Configuration and prerequisites
+
+Executable overrides use `*_SERVER_BIN`, `*_CLIENT_BIN`, and native control/init
+binary settings where appropriate. All paths default beneath `DB_DATA_ROOT` or
+`DB_CONFIG_ROOT`. Service variables are exported only to that service's targets.
+
+Set assigned network ports and private credentials in `.env.local`. No listener
+port is guessed. MariaDB with an empty `MARIADB_PORT` is explicitly socket-only.
+Service binaries are installed by the user; Make does not install or upgrade them.
 
 ## PostgreSQL
 
-Source: [make/pg.mk](../../make/pg.mk).
+Owner: [make/pg.mk](../../make/pg.mk), [scripts/pg.sh](../../scripts/pg.sh).
 
-The file exports `LC_ALL=en_US.UTF-8` and `LANG=en_US.UTF-8` for recipe processes.
-`PG_FOLDER` is `./data/pg`; `PG_OPTS` selects it with `-D`, and `PG_LOG_OPTS` selects
-`./data/pg/postgres.log` with `-l`.
+Data is `data/pg/`; its socket directory and background log are inside that directory.
+Fresh init uses `initdb` with `PG_USER` and `PG_PASSWORD`, UTF-8 and SCRAM
+authentication. Existing complete clusters are retained and their authentication is
+not changed. Check existing `pg_hba.conf` before enabling remote access.
 
-| Target      | Recipe behavior                                                 |
-| ----------- | --------------------------------------------------------------- |
-| `pg-init`   | Creates the directory with mkdir, then invokes initdb with -D   |
-| `pg-run`    | Invokes postgres directly with -D                               |
-| `pg`        | Invokes pg_ctl start with the data directory and log path       |
-| `pg-stop`   | Invokes pg_ctl stop with the same data directory and log path   |
+Foreground uses `postgres`; background uses native `pg_ctl start -w -t 10`.
+Stop uses native fast shutdown with a bounded wait; status uses `pg_ctl` and
+`pg_isready`. Both run modes require `PG_PORT`. A server/data major-version
+mismatch is rejected without changing the cluster.
 
-Initialization has no guard for an existing cluster. No port, listen address,
-authentication policy, or explicit shutdown mode is set in the recipe. The repository does
-not provide a PostgreSQL configuration file or a major-version data migration.
+[initdb](https://www.postgresql.org/docs/current/app-initdb.html),
+[pg_ctl](https://www.postgresql.org/docs/current/app-pg-ctl.html).
 
-## MySQL
+## MariaDB
 
-Sources: [make/mysql.mk](../../make/mysql.mk) and
-[scripts/mysql-logs.sql](../../scripts/mysql-logs.sql).
+Owner: [make/mariadb.mk](../../make/mariadb.mk),
+[scripts/mariadb.sh](../../scripts/mariadb.sh).
 
-`MYSQL_FOLDER` is the absolute path of `./data/mysql`, and `MYSQL_LOGFILE` is its
-`queries.log`. The base directory is inferred with `which mysql_install_db`, readlink, and
-dirname; the code assumes an installation layout rather than accepting an explicit binary
-prefix as its default.
+`mariadb-install-db` initializes `data/mariadb/db/` with Unix-socket authentication
+for the current OS user. Operational files live alongside that directory.
+Foreground uses `mariadbd --no-defaults`; background invokes that same foreground
+command explicitly and captures its PID/log. Readiness executes `SELECT 1` through
+the socket; stop uses native `mariadb-admin shutdown`.
 
-`MYSQL_OPTS` supplies `--datadir`, `--basedir`, and `--user=$(whoami)`. The last
-expression is a Make variable reference named `whoami`, not a shell invocation; without a
-supplied Make variable it expands to an empty value. The recipe does not compute the
-current OS user. `MYSQL_DB` defaults to the quoted text `'root'` and is used as a database
-name in the logging template, separately from the client's root login.
-
-| Target         | Recipe behavior                                                 |
-| -------------- | --------------------------------------------------------------- |
-| `mysql-init`   | Invokes mysql_install_db with MYSQL_OPTS                        |
-| `mysql-run`    | Invokes mysqld directly with MYSQL_OPTS                         |
-| `mysql`        | Invokes mysqld with MYSQL_OPTS and backgrounds it with &        |
-| `mysql-stop`   | Invokes sudo mysqladmin shutdown                                |
-| `mysql-logs`   | Expands the SQL with m4, pipes it to mysql -u root, follows log |
-
-The logging SQL selects `MYSQL_DB`, sets global `log_output` to `FILE`, sets the global
-general-log path, and enables the global general log. A failed `USE` statement can prevent
-the subsequent statements from running. There is no corresponding disable target. The
-final log-following command is `tail -f`; the target is long-running.
-
-The clients do not receive an explicit socket, host, port, or isolated option file.
-Stopping and enabling logging therefore do not explicitly identify the server launched
-with the repository data directory. `mysql-stop` adds sudo but no database credentials.
-The pipeline has no explicit pipefail handling; upstream command failure is not
-independently propagated by the recipe. There is no current-version compatibility check,
-readiness check, or data migration.
+Additional targets are `mariadb-shell`, `mariadb-bootstrap` for an authenticated
+remote development account, and `mariadb-logs` for general-query logging.
+See [mariadb.md](mariadb.md) for the immediate workflow and configuration.
+Existing MySQL data is neither reused nor converted.
 
 ## Redis
 
-Sources: [make/redis.mk](../../make/redis.mk) and
-[config/redis.conf](../../config/redis.conf).
+Owner: [make/redis.mk](../../make/redis.mk),
+[scripts/redis.sh](../../scripts/redis.sh).
 
-`REDIS_OPTS` names `./config/redis.conf`. `REDIS_FOLDER` is defined as `./data/redis` but
-is not used by the recipes. The config selects `dir ./data/redis`, `rdbcompression yes`,
-`appendonly yes`, and `appendfsync everysec`; other settings are left to the executable's
-defaults.
+Init prepares `data/redis/` and a private runtime config that includes the tracked
+[config/redis.conf](../../config/redis.conf). The native persistence options are RDB
+compression and AOF with fsync every second; all generated state stays inside the data
+directory. Run/start configure `REDIS_PORT`, `REDIS_HOST` and `REDIS_PASSWORD`.
 
-| Target         | Recipe behavior                                               |
-| -------------- | ------------------------------------------------------------- |
-| `redis-run`    | Invokes redis-server with the repository config               |
-| `redis`        | Invokes the same command and backgrounds it with &            |
-| `redis-stop`   | Invokes redis-cli SHUTDOWN using default connection settings  |
+Foreground uses native daemonization disabled; background uses native daemonization
+enabled. Authenticated PING must return PONG for readiness. Stop invokes native
+SHUTDOWN. Passwords use generated config and `REDISCLI_AUTH`, not command arguments.
 
-There is no `redis-init` target despite the README example. The configuration is tracked
-outside the ignored data directory. No bind address, port, credentials, PID file, or
-repository-specific shutdown connection is supplied. Persistence is enabled, but these
-recipes do not verify saved data or provide a data-format migration.
+[Redis CLI](https://redis.io/docs/latest/develop/tools/cli/).
 
-## Mailcatcher
+## MailCatcher
 
-Source: [make/mailcatcher.mk](../../make/mailcatcher.mk).
+Owner: [make/mailcatcher.mk](../../make/mailcatcher.mk),
+[scripts/mailcatcher.sh](../../scripts/mailcatcher.sh).
 
-| Target          | Recipe behavior                                             |
-| --------------- | ----------------------------------------------------------- |
-| `mc-run`        | Invokes mailcatcher --foreground                            |
-| `mc`            | Invokes mailcatcher without command options                 |
-| `mailcatcher`   | Requests mc as an order-only prerequisite; has no recipe    |
-| `mc-stop`       | Sends curl -v -X DELETE to http://0.0.0.0:1080              |
+Init prepares `data/mailcatcher/` and a temporary directory. Both execution modes
+use native `--foreground` with explicit SMTP/HTTP bindings. Background mode captures
+the process PID and output; stop sends graceful SIGTERM. Readiness requests the web
+interface with a bounded curl timeout. Both assigned ports must differ.
 
-The startup recipes do not explicitly set SMTP or web bind addresses or ports. The stop
-recipe hardcodes the HTTP destination and does not add curl's fail-on-HTTP-error option.
-Its source establishes that a DELETE request is sent; whether a particular installed
-Mailcatcher version shuts down successfully has not been verified. No initialization,
-repository data path, or pinned gem dependency is provided.
+Captured messages use native in-memory storage and disappear on shutdown.
+[MailCatcher](https://mailcatcher.me/).
 
 ## Typesense
 
-Source: [make/typesense.mk](../../make/typesense.mk).
+Owner: [make/typesense.mk](../../make/typesense.mk),
+[scripts/typesense.sh](../../scripts/typesense.sh).
 
-`TS_FOLDER` is `./data/typesense`. `TS_OPTS` supplies `--data-dir` and `--api-key`;
-`TS_KEY` has a literal value committed in the recipe. The value is not reproduced here.
-These variables use ordinary Make assignments and can be overridden on the Make command
-line.
+Init prepares `data/typesense/` and its log directory. Both modes use the native
+server command with explicit API and loopback peering listeners. Configure
+`TYPESENSE_PORT`, `TYPESENSE_PEERING_PORT` and `TYPESENSE_API_KEY`; the key is
+passed through the documented environment variable rather than argv.
 
-| Target        | Recipe behavior                                              |
-| ------------- | ------------------------------------------------------------ |
-| `ts`          | Invokes typesense-server directly with TS_OPTS               |
-| `typesense`   | Requests ts as an order-only prerequisite; has no recipe     |
+Background mode captures the process PID/log; graceful stop uses SIGTERM.
+Readiness checks that `/health` returns the successful JSON body.
+[Server configuration](https://typesense.org/docs/30.2/api/server-configuration.html).
 
-No recipe creates `./data/typesense`, starts a background instance, stops an instance, or
-checks readiness. Bind addresses and ports are not explicitly configured. Real credentials
-require git-crypt protection; removing a value later does not undo historical exposure.
+## Garage
 
-## Missing services and runtime guarantees
+Owner: [make/garage.mk](../../make/garage.mk),
+[scripts/garage.sh](../../scripts/garage.sh).
 
-There are no MinIO or RabbitMQ recipes or configuration files. Existing MySQL recipes
-establish an intended MySQL command surface, not compatibility with modern MySQL.
+Native single-node storage uses SQLite metadata and filesystem blocks. Init generates
+private configuration, RPC credentials and S3 credentials under `data/garage/`.
+Configure assigned S3 and RPC ports before init; existing configuration and credentials
+are retained on repeat init. First startup bootstraps the default key and bucket.
 
-No service is pinned to a release. Initialization, start, foreground execution, shutdown,
-and logging are inconsistent across services. No shared recipe verifies binary presence,
-service identity, exit status after background startup, or end-to-end runtime readiness.
+Background mode captures the server PID/log. Readiness uses native `health --quiet`;
+stop sends graceful SIGTERM. See [garage.md](garage.md) for exact settings, credentials,
+compatibility limits and upstream references.
+
+## RabbitMQ
+
+Owner: [make/rabbitmq.mk](../../make/rabbitmq.mk),
+[scripts/rabbitmq.sh](../../scripts/rabbitmq.sh).
+
+Init prepares private configuration, a cookie and paths under `data/rabbitmq/`.
+First server startup creates the native database. Configure assigned AMQP and
+distribution ports, and an authenticated development user. Native foreground server
+execution and `-detached` background execution share the same node and paths.
+
+Native diagnostics check readiness; `rabbitmqctl` handles graceful stop.
+Operational files, plugin expansion and Erlang crash dumps remain under the service
+directory. RabbitMQ uses Erlang's native epmd helper; status displays its registrations,
+and stop also stops epmd when no Erlang node remains. After interrupting a foreground
+broker, run rabbitmq-stop to clean up an idle epmd. Cleanup refuses when another node
+is registered. See the script's settings for the precise environment mapping.
+[File locations](https://www.rabbitmq.com/docs/relocate),
+[CLI](https://www.rabbitmq.com/docs/cli),
+[Erlang compatibility](https://www.rabbitmq.com/docs/which-erlang).
+
+## Runtime verification
+
+The user verifies each installed release: init, foreground interruption, background
+readiness, status, stop, restart and persistence, then fresh initialization after
+removing a stopped service's directory. MailCatcher's messages are intentionally
+transient. Exercise application SQL, Redis commands, S3 uploads/downloads, Typesense
+search, SMTP capture and AMQP publish/consume as applicable.
+
+No automatic data migration or destructive cleanup task is provided.

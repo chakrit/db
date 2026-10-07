@@ -2,65 +2,61 @@
 
 Status: implemented
 
-This repository gives developers explicit Make commands for host-installed local
-services. It contains launch recipes rather than a database server implementation,
-package installer, container stack, or service supervisor.
+This repository gives developers explicit GNU Make commands for host-installed local
+services. There is only one instance of each service on the entire machine, always
+started through this repository. It contains service recipes rather than an installer,
+container stack or persistent service manager.
 
-## Entry point and dependencies
+## Entry point and configuration
 
-The root [Makefile](../../Makefile) includes every `make/*.mk` file. Recipes assume
-execution from the repository root; relative data and configuration paths use that
-working directory. Service behavior is detailed in [services.md](services.md).
+The root [Makefile](../../Makefile) loads tracked [.env](../../.env), optional ignored
+`.env.local`, then explicit `make/*.mk` owners. Bare Make lists commands and starts
+nothing. Run commands from the repository root; `DB_ROOT` is that absolute directory.
 
-Each service depends on executables already available to the shell. The repository
-does not pin service versions, install dependencies, or check binary compatibility.
-There is no Ruby version pin or Gemfile in this checkout. There is no application build
-or automated test suite.
+`DB_DATA_ROOT` and `DB_CONFIG_ROOT` default to `data/` and `config/` beneath that
+root. Settings use conditional defaults. Make command-line values win over
+`.env.local`, which wins over inherited environment values and then defaults.
+Only the selected service's recipe variables and common `DB_*` values are explicitly
+exported. Existing inherited environment variables remain available to subprocesses.
 
-The Makefile declares `.PHONY: *`; it does not enumerate the service targets as phony.
-Recipes have no common readiness check, process registry, or failure-recovery mechanism.
-Backgrounding a command does not establish that its service is ready.
+Each service Makefile orders binaries, paths, listener settings and credentials,
+followed by init, foreground run, background start, stop and status. Targets are
+enumerated in `.PHONY`; aliases for the former command vocabulary are removed.
 
-## Files and data ownership
+## Source and data ownership
 
-| Path                       | Role                                                      |
-| -------------------------- | --------------------------------------------------------- |
-| `make/*.mk`                | Service-specific Make recipes                             |
-| `scripts/mysql-logs.sql`   | Template for enabling MySQL general-query logging         |
-| `data/pg/`                 | PostgreSQL data and the pg target's log                   |
-| `data/mysql/`              | MySQL data and general-query log                          |
-| `config/redis.conf`        | Tracked Redis configuration outside disposable data       |
-| `data/redis/`              | Redis persistence directory selected by that config       |
-| `data/typesense/`          | Typesense data directory                                  |
-| `docs/spec/`               | Authoritative project behavior and intended changes       |
+| Path                    | Role                                                   |
+| ----------------------- | ------------------------------------------------------ |
+| `make/*.mk`             | One service's variables and Make targets               |
+| `scripts/<service>.sh`  | Native initialization, execution and control           |
+| `scripts/service.sh`    | Validation, readiness and explicit process control     |
+| `config/redis.conf`     | Tracked Redis persistence template                     |
+| `data/<service>/`       | Disposable service state, logs and generated config    |
+| `docs/spec/`            | Authoritative behavior and operational references      |
 
-`data/.gitignore` ignores generated contents of the service data root while retaining
-the ignore file itself. Existing PostgreSQL and Redis directories were moved into
-`data/pg/` and `data/redis/`; the recipes now address these paths. Redis configuration
-was moved separately to `config/redis.conf`, outside the disposable data directory.
-Empty per-service directories are local scaffolding and are not tracked by Git.
-[.gitignore](../../.gitignore) retains the legacy root-level ignore patterns.
-No recipe creates or selects a repository-owned Mailcatcher data directory yet.
-The complete intended layout is defined in [service-lifecycle.md](service-lifecycle.md).
+MariaDB replaces MySQL and Garage supplies S3-compatible object storage. Active directory
+names are `pg`, `mariadb`, `redis`, `mailcatcher`, `typesense`, `garage` and `rabbitmq`.
+Existing MySQL data is retained without conversion. PostgreSQL and Redis data was moved
+under `data/` without modifying its contents.
 
-The [README](../../README.md) describes containing service data in this checkout.
-Implemented recipes specify data directories for the database and search services,
-but do not isolate every service's sockets, ports, logs, or configuration from host
-defaults. The README's cleanup examples are destructive; agents must not execute them.
+`data/.gitignore` keeps generated state untracked. Configuration templates remain
+outside disposable state; private generated configuration remains inside each service
+directory. All scripts preserve existing data. Initialization is not an upgrade.
 
-## Working rules
+## Prerequisites and verification
 
-Leave service startup to the user. Preserve existing data; initialization is not an
-upgrade or migration procedure. Remote-access configuration must bind to `0.0.0.0`
-and use an assigned port in 8000–9000; obtain the port from the control agent before
-putting a value into configuration, documentation, or code.
+The user installs native service binaries. A missing executable gives
+an actionable error. The repository does not install dependencies, register system
+services, or run an automatic upgrade.
 
-Keep each service's recipes in its existing `make/*.mk` owner. Use the `gh` remote,
-and do not push without explicit authorization. Load `architect` and `code` for coding
-tasks. ACE is optional tooling; repository commands and durable docs stand on their own.
+The project is exempt from test requirements. Do not write or retain test code, add
+automated check/test targets, or run test/check workflows. Leave initialization and
+service startup to the user.
 
-## Verification limits
+Network listeners use assigned ports in 8000–9000; obtain assignments from the control
+agent before setting defaults. MariaDB can run through its Unix socket with no TCP
+listener while assignments are pending. See [services.md](services.md) for commands
+and [modernization.md](modernization.md) for version baselines and verification limits.
 
-This specification records source behavior, not a successful service execution on the
-current machine. No service was started or stopped to produce it. Binary versions,
-existing data, service reachability, and runtime compatibility have not been verified.
+Use the current branch and `gh` remote; local commits are authorized, pushes require
+explicit permission. Repository commands and docs work without ACE or any agent vendor.
