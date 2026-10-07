@@ -12,7 +12,6 @@ build or automated test suite.
 - make/mailcatcher.mk: mc-run, mc, mailcatcher, mc-stop.
 - make/typesense.mk: ts and typesense run in the foreground; data under ts/.
 - scripts/mysql-logs.sql: the SQL used by mysql-logs to enable general-query logging.
-- .ruby-version: Ruby 3.3.6.
 
 Run make targets only when the user authorizes the service operation. Leave server
 startup to the user. Do not run destructive cleanup commands from README.md.
