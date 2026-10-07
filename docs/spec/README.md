@@ -26,6 +26,7 @@ already has a row.
 | [project.md](project.md)                     | Make entry point, data ownership and rules   | implemented   |
 | [services.md](services.md)                   | Existing commands, config and runtime limits | implemented   |
 | [service-lifecycle.md](service-lifecycle.md) | Required initialization and execution modes  | accepted      |
+| [modernization.md](modernization.md)         | Proposed updates and new service support     | draft         |
 
 ## Format
 
