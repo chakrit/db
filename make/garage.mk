@@ -1,43 +1,20 @@
-GARAGE_SERVER_BIN ?= garage
+GARAGE_DIR    := ./data/garage
+GARAGE_CONFIG := ./config/garage.toml
+GARAGE_OPTS   := -c $(GARAGE_CONFIG)
 
-GARAGE_DATA_DIR ?= $(DB_DATA_ROOT)/garage
-GARAGE_CONFIG_FILE ?= $(GARAGE_DATA_DIR)/garage.toml
-GARAGE_LOG_FILE ?= $(GARAGE_DATA_DIR)/garage.log
-GARAGE_PID_FILE ?= $(GARAGE_DATA_DIR)/garage.pid
-
-GARAGE_HOST ?= 0.0.0.0
-GARAGE_PORT ?=
-GARAGE_RPC_PORT ?=
-
-GARAGE_ACCESS_KEY ?=
-GARAGE_SECRET_KEY ?=
-GARAGE_BUCKET ?= local-bucket
-
-garage-%: export GARAGE_SERVER_BIN := $(GARAGE_SERVER_BIN)
-garage-%: export GARAGE_DATA_DIR := $(GARAGE_DATA_DIR)
-garage-%: export GARAGE_CONFIG_FILE := $(GARAGE_CONFIG_FILE)
-garage-%: export GARAGE_LOG_FILE := $(GARAGE_LOG_FILE)
-garage-%: export GARAGE_PID_FILE := $(GARAGE_PID_FILE)
-garage-%: export GARAGE_HOST := $(GARAGE_HOST)
-garage-%: export GARAGE_PORT := $(GARAGE_PORT)
-garage-%: export GARAGE_RPC_PORT := $(GARAGE_RPC_PORT)
-garage-%: export GARAGE_ACCESS_KEY := $(GARAGE_ACCESS_KEY)
-garage-%: export GARAGE_SECRET_KEY := $(GARAGE_SECRET_KEY)
-garage-%: export GARAGE_BUCKET := $(GARAGE_BUCKET)
-
-.PHONY: garage-init garage-run garage-start garage-stop garage-status
+.PHONY: garage-init garage-run garage garage-stop
 
 garage-init:
-	@sh "$(DB_ROOT)/scripts/garage.sh" init
+	mkdir -p $(GARAGE_DIR)/meta $(GARAGE_DIR)/blocks
+	@umask 077; test -f $(GARAGE_DIR)/rpc-secret || openssl rand -hex 32 > $(GARAGE_DIR)/rpc-secret
 
 garage-run:
-	@sh "$(DB_ROOT)/scripts/garage.sh" run
+	garage $(GARAGE_OPTS) server --single-node
 
-garage-start:
-	@sh "$(DB_ROOT)/scripts/garage.sh" start
+garage:
+	@nohup garage $(GARAGE_OPTS) server --single-node >> $(GARAGE_DIR)/garage.log 2>&1 < /dev/null & \
+		printf '%s\n' "$$!" > $(GARAGE_DIR)/garage.pid; \
+		printf 'Garage PID: %s; log: %s\n' "$$!" "$(GARAGE_DIR)/garage.log"
 
 garage-stop:
-	@sh "$(DB_ROOT)/scripts/garage.sh" stop
-
-garage-status:
-	@sh "$(DB_ROOT)/scripts/garage.sh" status
+	kill -TERM "$$(cat $(GARAGE_DIR)/garage.pid)"

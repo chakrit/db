@@ -2,34 +2,31 @@
 
 Status: accepted
 
-This is the intended behavior for modernization of this repository's local service
-commands. [services.md](services.md) describes the implementation and its unverified
-native runtime checks.
-
-Every supported service must offer initialization, foreground execution, and background
-execution. Every supported service must have an initialization task.
+Every supported service has initialization, foreground execution, background execution
+and stop commands. Use the original Make convention: `<service>-init`,
+`<service>-run`, `<service>` for background execution, and `<service>-stop`.
 
 There is only one instance of each service on the entire machine, always started through
-this repository. No checkout-specific instance isolation is required. Do not start
-services automatically in the background.
+this repository. Do not add checkout-specific instance isolation or automatic startup.
 
-Initialization must allow a fresh instance after the user removes the stopped service's
-directory. Keep persistent service state under that repository-owned directory so the
-user does not need to hunt down hidden state elsewhere to reset the instance.
+This is a personal tool for starting local databases and supporting services, keeping
+their data in this repository for easy maintenance. Keep the setup minimal and follow
+the original Make convention. Variables are for DRY paths and options, not configuration.
 
-The service data root is `data/`, with one directory per service: `pg/`, `mariadb/`,
-`redis/`, `mailcatcher/`, `typesense/`, `garage/`, and `rabbitmq/`. Use MariaDB in place
-of MySQL and Garage for S3-compatible object storage. Existing PostgreSQL and Redis
-data was moved into this root. Existing MySQL data remains untouched.
-Service initialization must recreate missing directories. Keep tracked configuration
-outside disposable data directories.
+Hard-code the data root to `./data`, with `pg/`, `mariadb/`, `redis/`,
+`mailcatcher/`, `typesense/`, `garage/` and `rabbitmq/` beneath it.
+Use MariaDB instead of MySQL and Garage for S3-compatible object storage.
+Existing MySQL data remains untouched. Tracked native config files live in `config/`.
 
-Leave service startup and destructive directory removal to the user. Agents must not
-execute destructive cleanup commands. Existing data must not be discarded by an
-initialization task.
+Initialization prepares each service after the user removes its stopped data directory.
+Do not discard populated data, introduce cleanup commands, or perform automatic upgrades.
+Leave server startup and destructive removal to the user.
 
-Structure environment variables sensibly. Every service Makefile must use a consistent
-variable and task structure.
+Supporting services use native default ports. Development/preview server port assignment,
+8000–9000 restrictions and remote-binding rules do not apply to this repository.
 
-This project is exempt from test requirements. Do not write or retain test code, add
-automated check/test targets, or run test/check workflows.
+Do not add configurable binaries, environment loaders, export lists, generic launchers,
+custom account-bootstrap workflows or a portable configuration framework.
+
+This project is exempt from tests. Do not write or retain test code, add automated
+check/test targets, or run test/check workflows.

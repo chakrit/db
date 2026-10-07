@@ -1,58 +1,35 @@
-MARIADB_SERVER_BIN ?= mariadbd
-MARIADB_INIT_BIN   ?= mariadb-install-db
-MARIADB_CLIENT_BIN ?= mariadb
-MARIADB_ADMIN_BIN  ?= mariadb-admin
+MARIADB_DIR       := $(abspath ./data/mariadb)
+MARIADB_SOCKET    := $(MARIADB_DIR)/server.sock
+MARIADB_LOG       := $(MARIADB_DIR)/server.log
+MARIADB_QUERY_LOG := $(MARIADB_DIR)/queries.log
+MARIADB_OPTS      := --no-defaults --datadir="$(MARIADB_DIR)/db" \
+                    --socket="$(MARIADB_SOCKET)" --pid-file="$(MARIADB_DIR)/server.pid" \
+                    --tmpdir="$(MARIADB_DIR)/tmp" --log-error="$(MARIADB_LOG)" \
+                    --general-log-file="$(MARIADB_QUERY_LOG)"
+MARIADB_CLIENT_OPTS := --no-defaults --socket="$(MARIADB_SOCKET)" --user="$$(id -un)"
 
-MARIADB_DATA_DIR       ?= $(DB_DATA_ROOT)/mariadb
-MARIADB_SOCKET         ?= $(MARIADB_DATA_DIR)/server.sock
-MARIADB_PID_FILE       ?= $(MARIADB_DATA_DIR)/server.pid
-MARIADB_LOG_FILE       ?= $(MARIADB_DATA_DIR)/server.log
-MARIADB_QUERY_LOG_FILE ?= $(MARIADB_DATA_DIR)/queries.log
-
-MARIADB_HOST ?= 0.0.0.0
-MARIADB_PORT ?=
-
-MARIADB_USER            ?=
-MARIADB_REMOTE_USER     ?= dev
-MARIADB_REMOTE_PASSWORD ?=
-
-mariadb-%: export MARIADB_SERVER_BIN := $(MARIADB_SERVER_BIN)
-mariadb-%: export MARIADB_INIT_BIN := $(MARIADB_INIT_BIN)
-mariadb-%: export MARIADB_CLIENT_BIN := $(MARIADB_CLIENT_BIN)
-mariadb-%: export MARIADB_ADMIN_BIN := $(MARIADB_ADMIN_BIN)
-mariadb-%: export MARIADB_DATA_DIR := $(MARIADB_DATA_DIR)
-mariadb-%: export MARIADB_SOCKET := $(MARIADB_SOCKET)
-mariadb-%: export MARIADB_PID_FILE := $(MARIADB_PID_FILE)
-mariadb-%: export MARIADB_LOG_FILE := $(MARIADB_LOG_FILE)
-mariadb-%: export MARIADB_QUERY_LOG_FILE := $(MARIADB_QUERY_LOG_FILE)
-mariadb-%: export MARIADB_HOST := $(MARIADB_HOST)
-mariadb-%: export MARIADB_PORT := $(MARIADB_PORT)
-mariadb-%: export MARIADB_USER := $(MARIADB_USER)
-mariadb-%: export MARIADB_REMOTE_USER := $(MARIADB_REMOTE_USER)
-mariadb-%: export MARIADB_REMOTE_PASSWORD := $(MARIADB_REMOTE_PASSWORD)
-
-.PHONY: mariadb-init mariadb-run mariadb-start mariadb-stop mariadb-status mariadb-bootstrap mariadb-shell mariadb-logs
+.PHONY: mariadb-init mariadb-run mariadb mariadb-stop mariadb-logs
 
 mariadb-init:
-	@sh "$(DB_ROOT)/scripts/mariadb.sh" init
+	mkdir -p "$(MARIADB_DIR)/db" "$(MARIADB_DIR)/tmp"
+	@if [ -d "$(MARIADB_DIR)/db/mysql" ]; then \
+		printf '%s\n' 'MariaDB is already initialized.'; \
+	else \
+		mariadb-install-db --no-defaults --datadir="$(MARIADB_DIR)/db" \
+			--auth-root-authentication-method=socket --auth-root-socket-user="$$(id -un)" \
+			--skip-test-db; \
+	fi
 
 mariadb-run:
-	@sh "$(DB_ROOT)/scripts/mariadb.sh" run
+	mariadbd $(MARIADB_OPTS)
 
-mariadb-start:
-	@sh "$(DB_ROOT)/scripts/mariadb.sh" start
+mariadb:
+	@nohup mariadbd $(MARIADB_OPTS) >> "$(MARIADB_LOG)" 2>&1 < /dev/null & \
+		printf 'MariaDB PID: %s; log: %s\n' "$$!" "$(MARIADB_LOG)"
 
 mariadb-stop:
-	@sh "$(DB_ROOT)/scripts/mariadb.sh" stop
-
-mariadb-status:
-	@sh "$(DB_ROOT)/scripts/mariadb.sh" status
-
-mariadb-bootstrap:
-	@sh "$(DB_ROOT)/scripts/mariadb.sh" bootstrap
-
-mariadb-shell:
-	@sh "$(DB_ROOT)/scripts/mariadb.sh" shell
+	mariadb-admin $(MARIADB_CLIENT_OPTS) shutdown
 
 mariadb-logs:
-	@sh "$(DB_ROOT)/scripts/mariadb.sh" logs
+	mariadb $(MARIADB_CLIENT_OPTS) --execute="SET GLOBAL log_output = 'FILE'; SET GLOBAL general_log = 1;"
+	tail -f "$(MARIADB_QUERY_LOG)"

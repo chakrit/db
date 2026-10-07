@@ -1,41 +1,18 @@
-TYPESENSE_SERVER_BIN ?= typesense-server
-TYPESENSE_CLIENT_BIN ?= curl
+TYPESENSE_DIR  := ./data/typesense
+TYPESENSE_OPTS := --data-dir=$(TYPESENSE_DIR) --api-key=local-development
 
-TYPESENSE_DATA_DIR ?= $(DB_DATA_ROOT)/typesense
-TYPESENSE_LOG_DIR ?= $(TYPESENSE_DATA_DIR)/logs
-TYPESENSE_LOG_FILE ?= $(TYPESENSE_DATA_DIR)/typesense.log
-TYPESENSE_PID_FILE ?= $(TYPESENSE_DATA_DIR)/typesense.pid
-
-TYPESENSE_HOST ?= 0.0.0.0
-TYPESENSE_PORT ?=
-TYPESENSE_PEERING_PORT ?=
-
-TYPESENSE_API_KEY ?=
-
-typesense-%: export TYPESENSE_SERVER_BIN := $(TYPESENSE_SERVER_BIN)
-typesense-%: export TYPESENSE_CLIENT_BIN := $(TYPESENSE_CLIENT_BIN)
-typesense-%: export TYPESENSE_DATA_DIR := $(TYPESENSE_DATA_DIR)
-typesense-%: export TYPESENSE_LOG_DIR := $(TYPESENSE_LOG_DIR)
-typesense-%: export TYPESENSE_LOG_FILE := $(TYPESENSE_LOG_FILE)
-typesense-%: export TYPESENSE_PID_FILE := $(TYPESENSE_PID_FILE)
-typesense-%: export TYPESENSE_HOST := $(TYPESENSE_HOST)
-typesense-%: export TYPESENSE_PORT := $(TYPESENSE_PORT)
-typesense-%: export TYPESENSE_PEERING_PORT := $(TYPESENSE_PEERING_PORT)
-typesense-%: export TYPESENSE_API_KEY := $(TYPESENSE_API_KEY)
-
-.PHONY: typesense-init typesense-run typesense-start typesense-stop typesense-status
+.PHONY: typesense-init typesense-run typesense typesense-stop
 
 typesense-init:
-	@sh "$(DB_ROOT)/scripts/typesense.sh" init
+	mkdir -p $(TYPESENSE_DIR)
 
 typesense-run:
-	@sh "$(DB_ROOT)/scripts/typesense.sh" run
+	typesense-server $(TYPESENSE_OPTS)
 
-typesense-start:
-	@sh "$(DB_ROOT)/scripts/typesense.sh" start
+typesense:
+	@nohup typesense-server $(TYPESENSE_OPTS) >> $(TYPESENSE_DIR)/typesense.log 2>&1 < /dev/null & \
+		printf '%s\n' "$$!" > $(TYPESENSE_DIR)/typesense.pid; \
+		printf 'Typesense PID: %s; log: %s\n' "$$!" "$(TYPESENSE_DIR)/typesense.log"
 
 typesense-stop:
-	@sh "$(DB_ROOT)/scripts/typesense.sh" stop
-
-typesense-status:
-	@sh "$(DB_ROOT)/scripts/typesense.sh" status
+	kill -TERM "$$(cat $(TYPESENSE_DIR)/typesense.pid)"

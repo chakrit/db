@@ -1,51 +1,40 @@
-RABBITMQ_SERVER_BIN  ?= rabbitmq-server
-RABBITMQ_CONTROL_BIN ?= rabbitmqctl
-RABBITMQ_CLIENT_BIN  ?= rabbitmq-diagnostics
-RABBITMQ_EPMD_BIN    ?= epmd
+RABBITMQ_DIR  := ./data/rabbitmq
+RABBITMQ_PATH := $(CURDIR)/$(RABBITMQ_DIR)
+RABBITMQ_OPTS := RABBITMQ_MNESIA_BASE="$(RABBITMQ_PATH)/mnesia" \
+	RABBITMQ_MNESIA_DIR="$(RABBITMQ_PATH)/mnesia" \
+	RABBITMQ_LOG_BASE="$(RABBITMQ_PATH)/log" \
+	RABBITMQ_LOGS="$(RABBITMQ_PATH)/log/rabbitmq.log" \
+	RABBITMQ_PID_FILE="$(RABBITMQ_PATH)/rabbitmq.pid" \
+	RABBITMQ_PLUGINS_EXPAND_DIR="$(RABBITMQ_PATH)/plugins" \
+	RABBITMQ_ENABLED_PLUGINS_FILE="$(RABBITMQ_PATH)/enabled_plugins" \
+	RABBITMQ_FEATURE_FLAGS_FILE="$(RABBITMQ_PATH)/feature_flags" \
+	RABBITMQ_CONFIG_FILE="$(RABBITMQ_PATH)/rabbitmq.conf" \
+	RABBITMQ_ADVANCED_CONFIG_FILE="$(RABBITMQ_PATH)/advanced.config" \
+	RABBITMQ_CONF_ENV_FILE="$(RABBITMQ_PATH)/rabbitmq-env.conf" \
+	ERL_CRASH_DUMP="$(RABBITMQ_PATH)/erl_crash.dump" \
+	TMPDIR="$(RABBITMQ_PATH)/tmp" ERL_AFLAGS=-nocookie \
+	ERL_EPMD_ADDRESS=127.0.0.1 \
+	RABBITMQ_ERLANG_COOKIE="$$(cat $(RABBITMQ_DIR)/.erlang.cookie)"
 
-RABBITMQ_DATA_DIR    ?= $(DB_DATA_ROOT)/rabbitmq
-RABBITMQ_CONFIG_FILE ?= $(DB_CONFIG_ROOT)/rabbitmq.conf
-RABBITMQ_COOKIE_FILE ?= $(RABBITMQ_DATA_DIR)/.erlang.cookie
-RABBITMQ_PID_FILE    ?= $(RABBITMQ_DATA_DIR)/rabbitmq.pid
-RABBITMQ_LOG_FILE    ?= $(RABBITMQ_DATA_DIR)/log/rabbitmq.log
-
-RABBITMQ_HOST      ?= 0.0.0.0
-RABBITMQ_PORT      ?=
-RABBITMQ_DIST_PORT ?=
-RABBITMQ_NODENAME  ?= rabbit@localhost
-
-RABBITMQ_USER     ?= dev
-RABBITMQ_PASSWORD ?=
-
-rabbitmq-%: export RABBITMQ_SERVER_BIN := $(RABBITMQ_SERVER_BIN)
-rabbitmq-%: export RABBITMQ_CONTROL_BIN := $(RABBITMQ_CONTROL_BIN)
-rabbitmq-%: export RABBITMQ_CLIENT_BIN := $(RABBITMQ_CLIENT_BIN)
-rabbitmq-%: export RABBITMQ_EPMD_BIN := $(RABBITMQ_EPMD_BIN)
-rabbitmq-%: export RABBITMQ_DATA_DIR := $(RABBITMQ_DATA_DIR)
-rabbitmq-%: export RABBITMQ_CONFIG_FILE := $(RABBITMQ_CONFIG_FILE)
-rabbitmq-%: export RABBITMQ_COOKIE_FILE := $(RABBITMQ_COOKIE_FILE)
-rabbitmq-%: export RABBITMQ_PID_FILE := $(RABBITMQ_PID_FILE)
-rabbitmq-%: export RABBITMQ_LOG_FILE := $(RABBITMQ_LOG_FILE)
-rabbitmq-%: export RABBITMQ_HOST := $(RABBITMQ_HOST)
-rabbitmq-%: export RABBITMQ_PORT := $(RABBITMQ_PORT)
-rabbitmq-%: export RABBITMQ_DIST_PORT := $(RABBITMQ_DIST_PORT)
-rabbitmq-%: export RABBITMQ_NODENAME := $(RABBITMQ_NODENAME)
-rabbitmq-%: export RABBITMQ_USER := $(RABBITMQ_USER)
-rabbitmq-%: export RABBITMQ_PASSWORD := $(RABBITMQ_PASSWORD)
-
-.PHONY: rabbitmq-init rabbitmq-run rabbitmq-start rabbitmq-stop rabbitmq-status
+.PHONY: rabbitmq-init rabbitmq-run rabbitmq rabbitmq-stop
 
 rabbitmq-init:
-	@sh "$(DB_ROOT)/scripts/rabbitmq.sh" init
+	mkdir -p $(RABBITMQ_DIR)/mnesia $(RABBITMQ_DIR)/log \
+		$(RABBITMQ_DIR)/plugins $(RABBITMQ_DIR)/tmp
+	@if [ ! -f $(RABBITMQ_DIR)/.erlang.cookie ]; then \
+		umask 077; openssl rand -hex 32 > $(RABBITMQ_DIR)/.erlang.cookie; \
+	fi
+	chmod 400 $(RABBITMQ_DIR)/.erlang.cookie
+	@if [ ! -f $(RABBITMQ_DIR)/enabled_plugins ]; then \
+		printf '[].\n' > $(RABBITMQ_DIR)/enabled_plugins; \
+	fi
 
 rabbitmq-run:
-	@sh "$(DB_ROOT)/scripts/rabbitmq.sh" run
+	$(RABBITMQ_OPTS) rabbitmq-server
 
-rabbitmq-start:
-	@sh "$(DB_ROOT)/scripts/rabbitmq.sh" start
+rabbitmq:
+	$(RABBITMQ_OPTS) rabbitmq-server -detached
 
 rabbitmq-stop:
-	@sh "$(DB_ROOT)/scripts/rabbitmq.sh" stop
-
-rabbitmq-status:
-	@sh "$(DB_ROOT)/scripts/rabbitmq.sh" status
+	$(RABBITMQ_OPTS) rabbitmqctl shutdown
+	epmd -kill

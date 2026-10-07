@@ -1,17 +1,24 @@
 # db
 
 This repository wraps host-installed local services with GNU Make. The root Makefile
-includes make/*.mk; each file owns one service's commands. It contains no application
-build or automated test suite.
+includes make/*.mk; each file owns one service's direct native commands. This is a
+personal tool for starting local supporting services and keeping their data in this
+checkout, not a reusable configuration framework.
 
 ## Layout and commands
 
 - make/pg.mk, mariadb.mk, redis.mk, mailcatcher.mk, typesense.mk, garage.mk and
-  rabbitmq.mk: each service's settings and init/run/start/stop/status targets.
-- scripts/<service>.sh: native initialization, foreground/background and control.
-- scripts/service.sh: shared validation, readiness and explicit process control.
-- .env: shared defaults; ignored .env.local: personal overrides.
-- data/<service>/: all persisted and generated service state; config/: tracked templates.
+  rabbitmq.mk: <service>-init, <service>-run, <service> (background), <service>-stop.
+- data/<service>/: persistent data and operational files.
+- config/: the native Redis and Garage configuration files.
+
+Hard-code data under ./data. Make variables exist only to keep repeated paths and
+command options DRY and consistent. Use literal binary names and native default ports;
+do not add configurable binaries, environment loaders, export lists, generic launchers,
+custom account-bootstrap workflows or a portable configuration framework.
+
+These are supporting services, not development or preview servers. The preview-server
+port-assignment, 8000–9000 range and remote-binding rules do not apply here.
 
 Run make targets only when the user authorizes the service operation. Leave server
 startup to the user. Do not run destructive cleanup commands from README.md.

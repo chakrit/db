@@ -26,7 +26,7 @@ already has a row.
 | [project.md](project.md)                     | Make entry point, data ownership and rules   | implemented   |
 | [services.md](services.md)                   | Existing commands, config and runtime limits | implemented   |
 | [service-lifecycle.md](service-lifecycle.md) | Required initialization and execution modes  | accepted      |
-| [modernization.md](modernization.md)         | Configuration and checked release baselines  | implemented   |
+| [modernization.md](modernization.md)         | Native service release references           | implemented   |
 | [mariadb.md](mariadb.md)                     | MariaDB commands, socket auth and bootstrap  | implemented   |
 | [garage.md](garage.md)                       | Garage S3 commands, config and compatibility | implemented   |
 

@@ -1,36 +1,17 @@
-MAILCATCHER_SERVER_BIN ?= mailcatcher
-MAILCATCHER_CLIENT_BIN ?= curl
+MAILCATCHER_DIR  := ./data/mailcatcher
+MAILCATCHER_OPTS := TMPDIR="$(abspath $(MAILCATCHER_DIR))/tmp"
 
-MAILCATCHER_DATA_DIR ?= $(DB_DATA_ROOT)/mailcatcher
-MAILCATCHER_LOG_FILE ?= $(MAILCATCHER_DATA_DIR)/server.log
-MAILCATCHER_PID_FILE ?= $(MAILCATCHER_DATA_DIR)/server.pid
-
-MAILCATCHER_HOST      ?= 0.0.0.0
-MAILCATCHER_SMTP_PORT ?=
-MAILCATCHER_HTTP_PORT ?=
-
-mailcatcher-%: export MAILCATCHER_SERVER_BIN := $(MAILCATCHER_SERVER_BIN)
-mailcatcher-%: export MAILCATCHER_CLIENT_BIN := $(MAILCATCHER_CLIENT_BIN)
-mailcatcher-%: export MAILCATCHER_DATA_DIR := $(MAILCATCHER_DATA_DIR)
-mailcatcher-%: export MAILCATCHER_LOG_FILE := $(MAILCATCHER_LOG_FILE)
-mailcatcher-%: export MAILCATCHER_PID_FILE := $(MAILCATCHER_PID_FILE)
-mailcatcher-%: export MAILCATCHER_HOST := $(MAILCATCHER_HOST)
-mailcatcher-%: export MAILCATCHER_SMTP_PORT := $(MAILCATCHER_SMTP_PORT)
-mailcatcher-%: export MAILCATCHER_HTTP_PORT := $(MAILCATCHER_HTTP_PORT)
-
-.PHONY: mailcatcher-init mailcatcher-run mailcatcher-start mailcatcher-stop mailcatcher-status
+.PHONY: mailcatcher-init mailcatcher-run mailcatcher mailcatcher-stop
 
 mailcatcher-init:
-	@sh "$(DB_ROOT)/scripts/mailcatcher.sh" init
+	mkdir -p $(MAILCATCHER_DIR)/tmp
 
 mailcatcher-run:
-	@sh "$(DB_ROOT)/scripts/mailcatcher.sh" run
+	$(MAILCATCHER_OPTS) mailcatcher --foreground
 
-mailcatcher-start:
-	@sh "$(DB_ROOT)/scripts/mailcatcher.sh" start
+mailcatcher:
+	@$(MAILCATCHER_OPTS) nohup mailcatcher --foreground >> $(MAILCATCHER_DIR)/mailcatcher.log 2>&1 < /dev/null & \
+		printf 'MailCatcher PID: %s; log: %s\n' "$$!" "$(MAILCATCHER_DIR)/mailcatcher.log"
 
 mailcatcher-stop:
-	@sh "$(DB_ROOT)/scripts/mailcatcher.sh" stop
-
-mailcatcher-status:
-	@sh "$(DB_ROOT)/scripts/mailcatcher.sh" status
+	curl --fail -X DELETE http://127.0.0.1:1080/
