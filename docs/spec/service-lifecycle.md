@@ -19,6 +19,9 @@ Use MariaDB instead of MySQL and Garage for S3-compatible object storage.
 Existing MySQL data remains untouched. Tracked native config files live in `config/`.
 
 Initialization prepares each service after the user removes its stopped data directory.
+Foreground and background startup run the initialization prerequisite automatically to
+prepare directories and required native initial state. Explicit initialization remains
+available; repeated initialization retains existing data.
 Do not discard populated data, introduce cleanup commands, or perform automatic upgrades.
 Leave server startup and destructive removal to the user.
 

@@ -6,10 +6,10 @@ MAILCATCHER_OPTS := TMPDIR="$(abspath $(MAILCATCHER_DIR))/tmp"
 mailcatcher-init:
 	mkdir -p $(MAILCATCHER_DIR)/tmp
 
-mailcatcher-run:
+mailcatcher-run: | mailcatcher-init
 	$(MAILCATCHER_OPTS) mailcatcher --foreground
 
-mailcatcher:
+mailcatcher: | mailcatcher-init
 	@$(MAILCATCHER_OPTS) nohup mailcatcher --foreground >> $(MAILCATCHER_DIR)/mailcatcher.log 2>&1 < /dev/null & \
 		printf 'MailCatcher PID: %s; log: %s\n' "$$!" "$(MAILCATCHER_DIR)/mailcatcher.log"
 

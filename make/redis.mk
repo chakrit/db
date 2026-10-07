@@ -6,10 +6,10 @@ REDIS_OPTS := ./config/redis.conf
 redis-init:
 	mkdir -p $(REDIS_DIR)
 
-redis-run:
+redis-run: | redis-init
 	redis-server $(REDIS_OPTS) --daemonize no
 
-redis:
+redis: | redis-init
 	redis-server $(REDIS_OPTS) --daemonize yes \
 		--pidfile $(abspath $(REDIS_DIR))/redis.pid --logfile $(abspath $(REDIS_DIR))/redis.log
 

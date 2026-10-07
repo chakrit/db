@@ -12,10 +12,10 @@ pg-init:
 		initdb $(PG_OPTS); \
 	fi
 
-pg-run:
+pg-run: | pg-init
 	postgres $(PG_OPTS)
 
-pg:
+pg: | pg-init
 	pg_ctl start $(PG_OPTS) $(PG_LOG_OPTS)
 
 pg-stop:

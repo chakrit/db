@@ -29,10 +29,10 @@ rabbitmq-init:
 		printf '[].\n' > $(RABBITMQ_DIR)/enabled_plugins; \
 	fi
 
-rabbitmq-run:
+rabbitmq-run: | rabbitmq-init
 	$(RABBITMQ_OPTS) rabbitmq-server
 
-rabbitmq:
+rabbitmq: | rabbitmq-init
 	$(RABBITMQ_OPTS) rabbitmq-server -detached
 
 rabbitmq-stop:

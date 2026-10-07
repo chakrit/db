@@ -20,10 +20,10 @@ mariadb-init:
 			--skip-test-db; \
 	fi
 
-mariadb-run:
+mariadb-run: | mariadb-init
 	mariadbd $(MARIADB_OPTS)
 
-mariadb:
+mariadb: | mariadb-init
 	@nohup mariadbd $(MARIADB_OPTS) >> "$(MARIADB_LOG)" 2>&1 < /dev/null & \
 		printf 'MariaDB PID: %s; log: %s\n' "$$!" "$(MARIADB_LOG)"
 

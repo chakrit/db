@@ -6,10 +6,10 @@ TYPESENSE_OPTS := --data-dir=$(TYPESENSE_DIR) --api-key=local-development
 typesense-init:
 	mkdir -p $(TYPESENSE_DIR)
 
-typesense-run:
+typesense-run: | typesense-init
 	typesense-server $(TYPESENSE_OPTS)
 
-typesense:
+typesense: | typesense-init
 	@nohup typesense-server $(TYPESENSE_OPTS) >> $(TYPESENSE_DIR)/typesense.log 2>&1 < /dev/null & \
 		printf '%s\n' "$$!" > $(TYPESENSE_DIR)/typesense.pid; \
 		printf 'Typesense PID: %s; log: %s\n' "$$!" "$(TYPESENSE_DIR)/typesense.log"

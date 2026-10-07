@@ -9,7 +9,9 @@ so development/preview server port-assignment rules do not apply.
 
 ## Commands
 
-Initialize once, then choose foreground or background execution:
+Choose foreground or background execution. Startup prepares the data directories and
+required native initial state automatically; explicit init remains available, and
+repeat initialization retains existing data:
 
 ```sh
 make mariadb-init
