@@ -15,7 +15,8 @@ user does not need to hunt down hidden state elsewhere to reset the instance.
 
 The service data root is `data/`, with one directory per service: `pg/`, `mysql/`,
 `redis/`, `mailcatcher/`, `typesense/`, `minio/`, and `rabbitmq/`. The directory scaffold
-exists; existing recipes still use their old paths until modernization is implemented.
+exists; existing recipes use it, and the existing PostgreSQL and Redis data was moved
+into it. Mailcatcher, MinIO and RabbitMQ state routing still needs implementation.
 Service initialization must recreate missing directories. Keep tracked configuration
 outside disposable data directories.
 

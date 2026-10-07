@@ -3,7 +3,7 @@
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 
-PG_FOLDER   = ./pg
+PG_FOLDER   = ./data/pg
 PG_OPTS     = -D $(PG_FOLDER)
 PG_LOG_OPTS = -l $(PG_FOLDER)/postgres.log
 

@@ -27,21 +27,21 @@ Backgrounding a command does not establish that its service is ready.
 | -------------------------- | --------------------------------------------------------- |
 | `make/*.mk`                | Service-specific Make recipes                             |
 | `scripts/mysql-logs.sql`   | Template for enabling MySQL general-query logging         |
-| `pg/`                      | PostgreSQL data and the pg target's log                   |
-| `mysql/`                   | MySQL data and general-query log                          |
-| `redis/redis.conf`         | Tracked Redis configuration inside an ignored directory   |
-| `redis/`                   | Redis persistence directory selected by that config       |
-| `ts/`                      | Typesense data directory                                  |
+| `data/pg/`                 | PostgreSQL data and the pg target's log                   |
+| `data/mysql/`              | MySQL data and general-query log                          |
+| `config/redis.conf`        | Tracked Redis configuration outside disposable data       |
+| `data/redis/`              | Redis persistence directory selected by that config       |
+| `data/typesense/`          | Typesense data directory                                  |
 | `docs/spec/`               | Authoritative project behavior and intended changes       |
 
-[.gitignore](../../.gitignore) ignores the four service data directories. The Redis
-configuration is already tracked, so the ignore rule does not remove it from Git.
-No recipe creates a repository-owned Mailcatcher data directory.
-
-`data/.gitignore` protects the new service data root while retaining the ignore file
-itself. Empty per-service directories are local scaffolding and are not tracked by Git.
-Current recipes still use the root-level data paths listed above; the intended layout is
-defined in [service-lifecycle.md](service-lifecycle.md).
+`data/.gitignore` ignores generated contents of the service data root while retaining
+the ignore file itself. Existing PostgreSQL and Redis directories were moved into
+`data/pg/` and `data/redis/`; the recipes now address these paths. Redis configuration
+was moved separately to `config/redis.conf`, outside the disposable data directory.
+Empty per-service directories are local scaffolding and are not tracked by Git.
+[.gitignore](../../.gitignore) retains the legacy root-level ignore patterns.
+No recipe creates or selects a repository-owned Mailcatcher data directory yet.
+The complete intended layout is defined in [service-lifecycle.md](service-lifecycle.md).
 
 The [README](../../README.md) describes containing service data in this checkout.
 Implemented recipes specify data directories for the database and search services,

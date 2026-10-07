@@ -51,14 +51,14 @@ To clean all data from services, just run `git clean -xdf` on any related folder
 For example, to completely wipe your PostgreSQL clean and start fresh, just do this:
 
 ```sh
-$ git clean -xdf pg/
+$ git clean -xdf data/pg/
 ```
 
 If you are not sure what files `git` will delete from your system, just run a
 what-if mode once and `git-clean` will print out files that it would delete:
 
 ```sh
-$ git clean -xdn pg/
+$ git clean -xdn data/pg/
 ```
 
 # LICENSE

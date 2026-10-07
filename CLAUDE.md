@@ -6,11 +6,11 @@ build or automated test suite.
 
 ## Layout and commands
 
-- make/pg.mk: pg-init, pg-run, pg, pg-stop; data and logs under pg/.
-- make/mysql.mk: mysql-init, mysql-run, mysql, mysql-stop, mysql-logs; data under mysql/.
-- make/redis.mk: redis-run, redis, redis-stop; tracked config redis/redis.conf.
+- make/pg.mk: pg-init, pg-run, pg, pg-stop; data and logs under data/pg/.
+- make/mysql.mk: mysql-init, mysql-run, mysql, mysql-stop, mysql-logs; data under data/mysql/.
+- make/redis.mk: redis-run, redis, redis-stop; tracked config config/redis.conf.
 - make/mailcatcher.mk: mc-run, mc, mailcatcher, mc-stop.
-- make/typesense.mk: ts and typesense run in the foreground; data under ts/.
+- make/typesense.mk: ts and typesense run in the foreground; data under data/typesense/.
 - scripts/mysql-logs.sql: the SQL used by mysql-logs to enable general-query logging.
 
 Run make targets only when the user authorizes the service operation. Leave server

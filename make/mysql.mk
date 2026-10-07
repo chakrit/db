@@ -7,7 +7,7 @@ MYSQL_READLINK_DIRNAME = $(shell dirname $(MYSQL_READLINK))
 
 MYSQL_DB      = 'root'
 MYSQL_ROOT    = $(shell dirname $(MYSQL_DIRNAME)/$(MYSQL_READLINK_DIRNAME))
-MYSQL_FOLDER  = $(abspath ./mysql)
+MYSQL_FOLDER  = $(abspath ./data/mysql)
 MYSQL_LOGFILE = $(MYSQL_FOLDER)/queries.log
 MYSQL_OPTS    = --datadir=$(MYSQL_FOLDER) \
                 --basedir=$(MYSQL_ROOT) \
