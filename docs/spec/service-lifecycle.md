@@ -9,6 +9,10 @@ does not yet satisfy this contract consistently.
 Every supported service must offer initialization, foreground execution, and background
 execution. Every supported service must have an initialization task.
 
+There is only one instance of each service on the entire machine, always started through
+this repository. No checkout-specific instance isolation is required. Do not start
+services automatically in the background.
+
 Initialization must allow a fresh instance after the user removes the stopped service's
 directory. Keep persistent service state under that repository-owned directory so the
 user does not need to hunt down hidden state elsewhere to reset the instance.

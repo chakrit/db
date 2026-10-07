@@ -14,8 +14,10 @@ was installed, host configuration inspected, or service started during planning.
 
 Every supported service has explicit init, foreground, background, stop, and status
 tasks. Foreground execution remains attached to the terminal; background execution
-returns only after a bounded readiness check succeeds. Stopping identifies this
-checkout's service instance and leaves persisted data intact.
+returns only after a bounded readiness check succeeds. There is only one instance of
+each service on the entire machine, always started through this repository. Stop and
+status tasks use that service's connection settings; checkout-specific instance isolation
+is unnecessary. Stopping leaves persisted data intact.
 
 After the user stops a service and removes its data directory, init followed by either
 run mode produces a fresh instance. Initialization must reject incompatible or partial
@@ -38,8 +40,8 @@ Use the service names `pg`, `mysql`, `redis`, `mailcatcher`, `typesense`, `minio
 | `<service>-init`     | Prepare directories, configuration and required initial data  |
 | `<service>-run`      | Run the service in the foreground                             |
 | `<service>-start`    | Run the service in the background and check readiness         |
-| `<service>-stop`     | Stop this checkout's identified instance                      |
-| `<service>-status`   | Report readiness and instance identity                        |
+| `<service>-stop`     | Stop the service and preserve its data                        |
+| `<service>-status`   | Report whether the service is ready                           |
 
 Enumerate these targets in `.PHONY`; replace the current `.PHONY: *` declaration.
 Set a harmless explicit default target that lists available tasks. Document the rename
@@ -102,7 +104,7 @@ the current literal Typesense key without copying it into a new public file.
 
 **PostgreSQL:** the official site lists 18.6 as its newest stable release and 19 as a
 beta. Target stable PostgreSQL, retaining initdb, postgres and pg_ctl; make data,
-configuration, listener, log and stop identity explicit. Do not attempt an in-place
+configuration, listener, log and shutdown behavior explicit. Do not attempt an in-place
 major-version migration merely by changing a binary. [Official releases](https://www.postgresql.org/).
 
 **Redis:** target 8.10.2, which is listed in the official source release index. Keep the
@@ -119,7 +121,7 @@ durable unless its current public surface supports persistence.
 [Upstream releases](https://github.com/sj26/mailcatcher/releases).
 
 **Typesense:** target 30.2, the upstream latest release. Add init, background execution,
-bounded readiness, explicit listener settings and shutdown identity. Check whether its
+bounded readiness, explicit listener settings and shutdown behavior. Check whether its
 current public CLI supplies daemon/PID behavior before choosing process control. Do not
 invent an unsupported shutdown API or adopt another service manager to fill the gap.
 [Latest release](https://github.com/typesense/typesense/releases/latest).
@@ -175,7 +177,7 @@ Keep MinIO implementation gated on a deliberate distribution choice. Do not sile
 replace it with another S3 server or the proprietary AIStor product. If the user accepts
 archived community source, pin the chosen revision, audit it before adoption, and obtain
 separate approval for any resource-intensive build. Then implement init, foreground,
-background, explicit API/console bindings, credentials, readiness and stop identity with
+background, explicit API/console bindings, credentials, readiness and shutdown with
 all object-store metadata under `data/minio/`.
 
 ## Implementation sequence and checks
@@ -186,11 +188,11 @@ all object-store metadata under `data/minio/`.
 2. Establish the shared environment loading, variable convention and target vocabulary;
    implement PostgreSQL as the first concrete service using the accepted data layout.
 3. Modernize MySQL, Redis, Mailcatcher and Typesense, then add RabbitMQ; each service
-   lands only with all required lifecycle tasks and instance-specific control.
+   lands only with all required lifecycle tasks.
 4. Add MinIO after its distribution decision. Update README examples, instructions and
    existing specs in the same changes as the actual command surface changes.
 5. Provide a user-run verification procedure for each supported release: init, foreground
-   interruption, background readiness, identity-aware stop, restart and persistence,
+   interruption, background readiness, stop, restart and persistence,
    and fresh init after the user removes the stopped instance directory.
 
 Existing PostgreSQL and Redis directories have been relocated without changing their
@@ -201,7 +203,7 @@ Retain old ignore patterns while those directories may still contain user data.
 
 Validate Make composition and environment precedence with stub executables, including
 paths with spaces, missing binaries, partial initialization, conflicting ports, startup
-failure and a client accidentally addressing another instance. Avoid executing the
+failure and client connection settings. Avoid executing the
 current Makefile even in dry-run mode for inspection: its shell expansions perform
 installation-path probes during evaluation.
 
