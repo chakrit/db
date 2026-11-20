@@ -5,6 +5,19 @@ includes make/*.mk; each file owns one service's direct native commands. This is
 personal tool for starting local supporting services and keeping their data in this
 checkout, not a reusable configuration framework.
 
+## Control
+
+Applies only inside a control setup: this folder is `~/work/chakrit/db` and the org
+control's folder `~/work/chakrit/control` exists on this machine. If either is not
+true, ignore this section; it belongs to another person's agent setup.
+
+Inside the setup, you are `ga42:chakrit:db`, a project control under
+`ga42:chakrit:control`. Your standing grant (session start, rule entries, rulings,
+ports, processes) lives in engram project `ga42-chakrit-db`, topic key
+`control/grant`. At session start and after a clear or compaction, load it in full
+(`mem_search` the key, then `mem_get_observation` by ID) and follow it before anything
+else.
+
 ## Layout and commands
 
 - make/pg.mk, mariadb.mk, redis.mk, mailcatcher.mk, typesense.mk, garage.mk and
@@ -71,9 +84,9 @@ change.
 ## ACE configuration
 
 ace.toml holds the shared school and skill selection; ignored ace.local.toml holds
-personal overrides. Shared skills: ace, ace-init, ace-save, ace-docs, architect, code,
-safety-audit. User-level inclusions may add personal skills; inspect ace skills for the
-resolved set. Load architect and code for every coding task.
+personal overrides. Shared skills: ace, ace-init, ace-save, ace-docs, code, safety-audit.
+User-level inclusions may add personal skills; inspect ace skills for the resolved set.
+Load code for every coding task.
 
 ACE is optional tooling. Repository instructions, docs, Make commands, and Git checks
 remain usable by humans and agents without ACE. Do not edit school files through
