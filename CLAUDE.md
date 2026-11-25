@@ -36,10 +36,13 @@ port-assignment, 8000–9000 range and remote-binding rules do not apply here.
 Run make targets only when the user authorizes the service operation. Leave server
 startup to the user. Do not run destructive cleanup commands from README.md.
 There is only one instance of each service on the entire machine, always started through
-this repository, except on ga42 (Debian), where services run from Debian's default
-installs under systemctl. No checkout-specific instance isolation is required. Background
-startup is explicit; this repository registers no system service. MariaDB replaces
-MySQL; Garage supplies S3.
+this repository, except on Linux. No checkout-specific instance isolation is required.
+Background startup is explicit; this repository registers no system service. MariaDB
+replaces MySQL; Garage supplies S3.
+
+This repository does not work correctly on Linux. There, use the distribution's default
+package installs and manage the services with systemctl: true Linux setups put things in
+predictable folders that are easy to find and clean anyway.
 
 ## Conventions and verification
 
