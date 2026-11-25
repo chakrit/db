@@ -1,8 +1,7 @@
 PG_DIR         := ./data/pg
 PG_OPTS        := -D $(PG_DIR)
 PG_LOG_OPTS    := -l $(PG_DIR)/postgres.log
-# Upstream's socket directory; Debian's build moves it to /var/run/postgresql.
-PG_SERVER_OPTS := -k /tmp
+PG_SERVER_OPTS := -k $(abspath $(PG_DIR))
 
 # Debian keeps the server binaries off PATH, under /usr/lib/postgresql/<version>/bin.
 export PATH := $(shell pg_config --bindir):$(PATH)
