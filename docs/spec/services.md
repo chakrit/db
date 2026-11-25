@@ -16,6 +16,7 @@ Ports are the native defaults; preview-server assignment rules do not apply.
 [make/pg.mk](../../make/pg.mk) uses `initdb`, `postgres` and `pg_ctl`.
 Data is `./data/pg`; the background log is `postgres.log` in that directory.
 A completed cluster is retained on repeat initialization. The default port is 5432.
+The server's Unix socket is in `/tmp`, upstream's default.
 Authentication and upgrade behavior follow the installed PostgreSQL server.
 
 ## MariaDB
