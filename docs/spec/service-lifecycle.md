@@ -7,7 +7,8 @@ and stop commands. Use the original Make convention: `<service>-init`,
 `<service>-run`, `<service>` for background execution, and `<service>-stop`.
 
 There is only one instance of each service on the entire machine, always started through
-this repository. Do not add checkout-specific instance isolation or automatic startup.
+this repository, except on ga42 (Debian), where Debian's default installs run under
+systemctl. Do not add checkout-specific instance isolation or automatic startup.
 
 This is a personal tool for starting local databases and supporting services, keeping
 their data in this repository for easy maintenance. Keep the setup minimal and follow

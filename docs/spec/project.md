@@ -7,6 +7,8 @@ their data in this repository for easy maintenance. It is not a configuration fr
 or a tool intended to be dropped into other projects.
 
 There is one instance of each service on the entire machine, always started here.
+On ga42 (Debian), run each service's defaults from Debian's default installs, managed
+with systemctl; this repository's targets are not used there.
 Leave service startup and destructive directory removal to the user.
 
 The root Makefile includes `make/*.mk`. Each service file contains direct native
