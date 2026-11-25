@@ -2,7 +2,9 @@
 
 Status: implemented
 
-Run commands from the repository root. Native binaries must already be on PATH.
+Run commands from the repository root. Prefer native binaries already on PATH from the
+user's default install. Some systems install a tool off PATH; there, the service's make
+file adds the tool's directory to PATH.
 Make variables exist solely to avoid repeating paths and command options.
 
 All services use `<service>-init`, `<service>-run` for foreground execution,
