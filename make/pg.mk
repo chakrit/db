@@ -1,7 +1,6 @@
-PG_DIR         := ./data/pg
-PG_OPTS        := -D $(PG_DIR)
-PG_LOG_OPTS    := -l $(PG_DIR)/postgres.log
-PG_SERVER_OPTS := -k $(abspath $(PG_DIR))
+PG_DIR      := ./data/pg
+PG_OPTS     := -D $(PG_DIR)
+PG_LOG_OPTS := -l $(PG_DIR)/postgres.log
 
 # Debian keeps the server binaries off PATH, under /usr/lib/postgresql/<version>/bin.
 export PATH := $(shell pg_config --bindir):$(PATH)
@@ -17,10 +16,10 @@ pg-init:
 	fi
 
 pg-run: | pg-init
-	postgres $(PG_OPTS) $(PG_SERVER_OPTS)
+	postgres $(PG_OPTS)
 
 pg: | pg-init
-	pg_ctl start $(PG_OPTS) $(PG_LOG_OPTS) -o '$(PG_SERVER_OPTS)'
+	pg_ctl start $(PG_OPTS) $(PG_LOG_OPTS)
 
 pg-stop:
 	pg_ctl stop $(PG_OPTS)
